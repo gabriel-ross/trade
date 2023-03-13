@@ -2,8 +2,8 @@ package trade
 
 // User represents a user.
 type User struct {
-	ID          string
-	Name        string
-	Email       string
-	PhoneNumber string
+	ID          string `json:"id"`
+	Name        string `json:"name"`
+	Email       string `json:"email"`
+	PhoneNumber string `json:"phoneNumber"`
 }
