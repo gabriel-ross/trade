@@ -131,5 +131,6 @@ func bindRequest(r *http.Request, u *trade.User) error {
 	u.Name = reqBody.Name
 	u.Email = reqBody.Email
 	u.PhoneNumber = reqBody.PhoneNumber
+
 	return nil
 }
