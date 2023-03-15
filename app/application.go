@@ -70,6 +70,7 @@ func New(cnf Config, options ...func(*application)) *application {
 	// Instantiate and register services
 	user.New(a.router, "/users", user.NewRepository(a.dbClient, "users"))
 	user.New(a.router, "/accounts", user.NewRepository(a.dbClient, "accounts"))
+	user.New(a.router, "/transactions", user.NewRepository(a.dbClient, "transactions"))
 
 	return a
 }
