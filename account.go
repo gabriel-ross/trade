@@ -4,9 +4,9 @@ import "time"
 
 // Account represents a trading account.
 type Account struct {
-	ID                string
-	Owner             string
-	Balances          map[string]int
-	Reputation        int
-	CreationTimestamp time.Time
+	ID                string               `json:"id"`
+	Owner             string               `json:"owner"`
+	Balances          map[Currency]float64 `json:"balances"`
+	Reputation        int                  `json:"reputation"`
+	CreationTimestamp time.Time            `json:"creationTimestamp"`
 }
