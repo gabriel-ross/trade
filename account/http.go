@@ -12,7 +12,7 @@ import (
 	"github.com/go-chi/chi"
 )
 
-// request represents a request body containing user data.
+// request represents a request body containing account data.
 type request struct {
 	Owner string `json:"owner"`
 }
@@ -116,9 +116,9 @@ func (s *service) handleDelete() http.HandlerFunc {
 	}
 }
 
-// bindRequest is a helper function for binding data from a request to a user
-// object.
-func bindRequest(r *http.Request, u *trade.Account) error {
+// bindRequest is a helper function for binding data from a request to an
+// account object.
+func bindRequest(r *http.Request, a *trade.Account) error {
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		return err
@@ -127,10 +127,10 @@ func bindRequest(r *http.Request, u *trade.Account) error {
 	var reqBody request
 	err = json.Unmarshal(body, &reqBody)
 
-	u.Owner = reqBody.Owner
-	u.Balances = map[string]float64{}
-	u.Reputation = 100
-	u.CreationTimestamp = time.Now()
+	a.Owner = reqBody.Owner
+	a.Balances = map[string]float64{}
+	a.Reputation = 100
+	a.CreationTimestamp = time.Now()
 
 	return nil
 }
