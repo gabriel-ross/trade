@@ -26,6 +26,8 @@ type application struct {
 	dbClient arango.Database
 }
 
+// New instantiates a new application according to cnf and options and returns
+// the new application.
 func New(cnf Config, options ...func(*application)) *application {
 	a := &application{
 		cnf:    cnf,
@@ -71,12 +73,17 @@ func New(cnf Config, options ...func(*application)) *application {
 	return a
 }
 
+// WithCreateOnNotExist is an application functional option. If set to true
+// when the application is instantiated if no database with a.cnf.DB_NAME is
+// found a database with this name will be created along with any required
+// database connections.
 func WithCreateOnNotExist(flag bool) func(*application) {
 	return func(a *application) {
 		a.cnf.createOnNotExist = flag
 	}
 }
 
+// Run runs the application on a.cnf.PORT
 func (a *application) Run() error {
 	return http.ListenAndServe(":"+a.cnf.PORT, a.router)
 }
