@@ -6,10 +6,9 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	arango "github.com/arangodb/go-driver"
 	"github.com/gabriel-ross/trade"
 	"github.com/go-chi/chi"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 // request represents a request body containing user data.
@@ -85,7 +84,7 @@ func (s *service) handlePut() http.HandlerFunc {
 
 		_, err = s.database.Update(ctx, chi.URLParam(r, "id"), data)
 		if err != nil {
-			if status.Code(err) != codes.NotFound {
+			if arango.IsNotFoundGeneral(err) {
 				trade.RenderError(w, r, err, http.StatusNotFound, "%s", err.Error())
 				return
 			} else {
@@ -105,7 +104,7 @@ func (s *service) handleDelete() http.HandlerFunc {
 
 		err = s.database.Delete(ctx, chi.URLParam(r, "id"))
 		if err != nil {
-			if status.Code(err) != codes.NotFound {
+			if arango.IsNotFoundGeneral(err) {
 				trade.RenderError(w, r, err, http.StatusNotFound, "%s", err.Error())
 				return
 			} else {
