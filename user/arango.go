@@ -8,13 +8,20 @@ import (
 	"github.com/gabriel-ross/trade"
 )
 
-type repository struct {
+type userRepository struct {
 	database           arango.Database
 	userCollectionName string
 }
 
+func NewUserRepository(dbClient arango.Database, userCollectionName string) *userRepository {
+	return &userRepository{
+		database:           dbClient,
+		userCollectionName: userCollectionName,
+	}
+}
+
 // Create creates a new document.
-func (r *repository) Create(ctx context.Context, user trade.User) (trade.User, error) {
+func (r *userRepository) Create(ctx context.Context, user trade.User) (trade.User, error) {
 	var err error
 	col, err := r.database.Collection(ctx, r.userCollectionName)
 	if err != nil {
@@ -31,7 +38,7 @@ func (r *repository) Create(ctx context.Context, user trade.User) (trade.User, e
 }
 
 // List returns all documents in the collection.
-func (r *repository) List(ctx context.Context) ([]trade.User, error) {
+func (r *userRepository) List(ctx context.Context) ([]trade.User, error) {
 	var err error
 	var results []trade.User
 
@@ -56,7 +63,7 @@ RETURN entry`, r.userCollectionName)
 }
 
 // Get returns user with given id. If no document is found returns NotFoundError.
-func (r *repository) Get(ctx context.Context, id string) (trade.User, error) {
+func (r *userRepository) Get(ctx context.Context, id string) (trade.User, error) {
 	var err error
 	col, err := r.database.Collection(ctx, r.userCollectionName)
 	if err != nil {
@@ -74,7 +81,7 @@ func (r *repository) Get(ctx context.Context, id string) (trade.User, error) {
 
 // Update updates the document identified by id with values user and returns
 // the new document. If no document with id is found returns NotFoundError.
-func (r *repository) Update(ctx context.Context, id string, user trade.User) (trade.User, error) {
+func (r *userRepository) Update(ctx context.Context, id string, user trade.User) (trade.User, error) {
 	var err error
 	col, err := r.database.Collection(ctx, r.userCollectionName)
 	if err != nil {
@@ -92,7 +99,7 @@ func (r *repository) Update(ctx context.Context, id string, user trade.User) (tr
 
 // Delete deletes the document with given id from the collection. If no match
 // is found returns NotFoundError.
-func (r *repository) Delete(ctx context.Context, id string) error {
+func (r *userRepository) Delete(ctx context.Context, id string) error {
 	var err error
 	col, err := r.database.Collection(ctx, r.userCollectionName)
 	if err != nil {
