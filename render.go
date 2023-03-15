@@ -9,7 +9,7 @@ import (
 func RenderJSON(w http.ResponseWriter, r *http.Request, statusCode int, body interface{}) {
 	out, err := json.MarshalIndent(body, "", "	")
 	if err != nil {
-		RenderError(w, r, http.StatusInternalServerError, err, "%s", err.Error())
+		RenderError(w, r, err, http.StatusInternalServerError, "%s", err.Error())
 		return
 	}
 
@@ -25,7 +25,7 @@ type errorResponse struct {
 	ErrorText      string `json:"error,omitempty"`
 }
 
-func RenderError(w http.ResponseWriter, r *http.Request, code int, svrErr error, format string, args ...any) {
+func RenderError(w http.ResponseWriter, r *http.Request, svrErr error, code int, format string, args ...any) {
 	var err error
 	errResp := newErrorResponse(code, svrErr, format, args...)
 	respBody, err := json.Marshal(errResp)
