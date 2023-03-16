@@ -40,7 +40,7 @@ func (r *repository) Create(ctx context.Context, user trade.User) (trade.User, e
 // List returns all documents in the collection.
 func (r *repository) List(ctx context.Context) ([]trade.User, error) {
 	var err error
-	var results []trade.User
+	results := []trade.User{}
 
 	query := fmt.Sprintf(
 		`FOR entry IN %s

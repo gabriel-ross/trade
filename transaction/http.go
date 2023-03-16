@@ -19,6 +19,14 @@ type request struct {
 	RecipientID string             `json:"recipientID"`
 }
 
+type response[T trade.Transaction | []trade.Transaction] struct {
+	Data T `json:"data"`
+}
+
+func newResponse[T trade.Transaction | []trade.Transaction](data T) response[T] {
+	return response[T]{Data: data}
+}
+
 func (s *service) handleCreate() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var err error
@@ -37,7 +45,7 @@ func (s *service) handleCreate() http.HandlerFunc {
 			return
 		}
 
-		s.renderer.RenderJSON(w, r, http.StatusCreated, resp)
+		s.renderer.RenderJSON(w, r, http.StatusCreated, newResponse(resp))
 	}
 }
 
@@ -52,7 +60,7 @@ func (s *service) handleList() http.HandlerFunc {
 			return
 		}
 
-		s.renderer.RenderJSON(w, r, http.StatusOK, resp)
+		s.renderer.RenderJSON(w, r, http.StatusOK, newResponse(resp))
 	}
 }
 
@@ -67,7 +75,7 @@ func (s *service) handleGet() http.HandlerFunc {
 			return
 		}
 
-		s.renderer.RenderJSON(w, r, http.StatusOK, resp)
+		s.renderer.RenderJSON(w, r, http.StatusOK, newResponse(resp))
 	}
 }
 

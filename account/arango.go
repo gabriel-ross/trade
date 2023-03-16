@@ -21,77 +21,77 @@ func NewRepository(dbClient arango.Database, collectionName string) *repository 
 }
 
 // Create creates a new document.
-func (r *repository) Create(ctx context.Context, user trade.User) (trade.User, error) {
+func (r *repository) Create(ctx context.Context, account trade.Account) (trade.Account, error) {
 	var err error
 	col, err := r.database.Collection(ctx, r.collectionName)
 	if err != nil {
-		return trade.User{}, err
+		return trade.Account{}, err
 	}
 
-	meta, err := col.CreateDocument(ctx, user)
+	meta, err := col.CreateDocument(ctx, account)
 	if err != nil {
-		return trade.User{}, err
+		return trade.Account{}, err
 	}
 
-	user.ID = meta.Key
-	return user, nil
+	account.ID = meta.Key
+	return account, nil
 }
 
 // List returns all documents in the collection.
-func (r *repository) List(ctx context.Context) ([]trade.User, error) {
+func (r *repository) List(ctx context.Context) ([]trade.Account, error) {
 	var err error
-	var results []trade.User
+	results := []trade.Account{}
 
 	query := fmt.Sprintf(
 		`FOR entry IN %s
 RETURN entry`, r.collectionName)
 	cur, err := r.database.Query(ctx, query, map[string]interface{}{})
 	if err != nil {
-		return []trade.User{}, err
+		return []trade.Account{}, err
 	}
 	defer cur.Close()
 
 	for cur.HasMore() {
-		var user trade.User
-		if _, err = cur.ReadDocument(ctx, &user); err != nil {
-			return []trade.User{}, err
+		var acc trade.Account
+		if _, err = cur.ReadDocument(ctx, &acc); err != nil {
+			return []trade.Account{}, err
 		}
-		results = append(results, user)
+		results = append(results, acc)
 	}
 
 	return results, nil
 }
 
-// Get returns user with given id. If no document is found returns NotFoundError.
-func (r *repository) Get(ctx context.Context, id string) (trade.User, error) {
+// Get returns account with given id. If no document is found returns NotFoundError.
+func (r *repository) Get(ctx context.Context, id string) (trade.Account, error) {
 	var err error
 	col, err := r.database.Collection(ctx, r.collectionName)
 	if err != nil {
-		return trade.User{}, err
+		return trade.Account{}, err
 	}
 
-	var user trade.User
-	_, err = col.ReadDocument(ctx, id, &user)
+	var account trade.Account
+	_, err = col.ReadDocument(ctx, id, &account)
 	if err != nil {
-		return trade.User{}, err
+		return trade.Account{}, err
 	}
 
-	return user, nil
+	return account, nil
 }
 
-// Update updates the document identified by id with values user and returns
+// Update updates the document identified by id with values account and returns
 // the new document. If no document with id is found returns NotFoundError.
-func (r *repository) Update(ctx context.Context, id string, user trade.User) (trade.User, error) {
+func (r *repository) Update(ctx context.Context, id string, account trade.Account) (trade.Account, error) {
 	var err error
 	col, err := r.database.Collection(ctx, r.collectionName)
 	if err != nil {
-		return trade.User{}, err
+		return trade.Account{}, err
 	}
 
-	var result trade.User
-	_, err = col.UpdateDocument(arango.WithReturnNew(ctx, &result), id, user)
+	var result trade.Account
+	_, err = col.UpdateDocument(arango.WithReturnNew(ctx, &result), id, account)
 	if err != nil {
-		return trade.User{}, err
+		return trade.Account{}, err
 	}
 
 	return result, nil
