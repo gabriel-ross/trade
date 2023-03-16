@@ -4,9 +4,9 @@ import (
 	"log"
 	"net/http"
 
-	arango "github.com/arangodb/go-driver"
-	arangohttp "github.com/arangodb/go-driver/http"
+	arangodriver "github.com/arangodb/go-driver"
 	"github.com/gabriel-ross/trade"
+	"github.com/gabriel-ross/trade/arango"
 	"github.com/gabriel-ross/trade/user"
 	"github.com/go-chi/chi"
 )
@@ -24,7 +24,7 @@ type Config struct {
 type application struct {
 	cnf      Config
 	router   chi.Router
-	dbClient arango.Database
+	dbClient arangodriver.Database
 }
 
 // New instantiates a new application according to cnf and options and returns
@@ -40,33 +40,15 @@ func New(cnf Config, options ...func(*application)) *application {
 		option(a)
 	}
 
-	// Instantiate ArangoDB connection
-	arangoConn, err := arangohttp.NewConnection(arangohttp.ConnectionConfig{
-		Endpoints: []string{a.cnf.DB_ADDRESS},
-	})
+	arangoClient, err := arango.NewClient([]string{a.cnf.DB_ADDRESS})
 	if err != nil {
 		log.Fatalf("error connecting to db: %v", err)
 	}
 
-	arangoClient, err := arango.NewClient(arango.ClientConfig{
-		Connection: arangoConn,
-	})
+	a.dbClient, err = arangoClient.Database(nil, a.cnf.DB_NAME, true, []string{"users", "accounts", "transactions"})
 	if err != nil {
-		log.Fatalf("error instantiating arango client: %v", err)
+		log.Fatalf("error connecting to database: %v", err)
 	}
-
-	dbClient, err := arangoClient.Database(nil, a.cnf.DB_NAME)
-	if err != nil {
-		if arango.IsNotFoundGeneral(err) && a.cnf.createOnNotExist {
-			dbClient, err = arangoClient.CreateDatabase(nil, a.cnf.DB_NAME, nil)
-			if err != nil {
-				log.Fatalf("error creating database: %v", err)
-			}
-		} else {
-			log.Fatalf("error connecting to database: %v", err)
-		}
-	}
-	a.dbClient = dbClient
 
 	// Instantiate and register services
 	user.New(a.router, "/users", user.NewRepository(a.dbClient, "users"), &trade.RenderService{})
