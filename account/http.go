@@ -25,17 +25,17 @@ func (s *service) handleCreate() http.HandlerFunc {
 
 		err = bindRequest(r, &reqData)
 		if err != nil {
-			trade.RenderError(w, r, err, http.StatusBadRequest, "%s", err.Error())
+			s.renderer.RenderError(w, r, err, http.StatusBadRequest, "%s", err.Error())
 			return
 		}
 
 		resp, err := s.database.Create(ctx, reqData)
 		if err != nil {
-			trade.RenderError(w, r, err, http.StatusInternalServerError, "%s", err.Error())
+			s.renderer.RenderError(w, r, err, http.StatusInternalServerError, "%s", err.Error())
 			return
 		}
 
-		trade.RenderJSON(w, r, http.StatusCreated, resp)
+		s.renderer.RenderJSON(w, r, http.StatusCreated, resp)
 	}
 }
 
@@ -46,11 +46,11 @@ func (s *service) handleList() http.HandlerFunc {
 
 		resp, err := s.database.List(ctx)
 		if err != nil {
-			trade.RenderError(w, r, err, http.StatusInternalServerError, "%s", err.Error())
+			s.renderer.RenderError(w, r, err, http.StatusInternalServerError, "%s", err.Error())
 			return
 		}
 
-		trade.RenderJSON(w, r, http.StatusOK, resp)
+		s.renderer.RenderJSON(w, r, http.StatusOK, resp)
 	}
 }
 
@@ -61,11 +61,11 @@ func (s *service) handleGet() http.HandlerFunc {
 
 		resp, err := s.database.Get(ctx, chi.URLParam(r, "id"))
 		if err != nil {
-			trade.RenderError(w, r, err, http.StatusInternalServerError, "%s", err.Error())
+			s.renderer.RenderError(w, r, err, http.StatusInternalServerError, "%s", err.Error())
 			return
 		}
 
-		trade.RenderJSON(w, r, http.StatusOK, resp)
+		s.renderer.RenderJSON(w, r, http.StatusOK, resp)
 	}
 }
 
@@ -77,17 +77,17 @@ func (s *service) handlePut() http.HandlerFunc {
 
 		err = bindRequest(r, &data)
 		if err != nil {
-			trade.RenderError(w, r, err, http.StatusBadRequest, "%s", err.Error())
+			s.renderer.RenderError(w, r, err, http.StatusBadRequest, "%s", err.Error())
 			return
 		}
 
 		_, err = s.database.Update(ctx, chi.URLParam(r, "id"), data)
 		if err != nil {
 			if arango.IsNotFoundGeneral(err) {
-				trade.RenderError(w, r, err, http.StatusNotFound, "%s", err.Error())
+				s.renderer.RenderError(w, r, err, http.StatusNotFound, "%s", err.Error())
 				return
 			} else {
-				trade.RenderError(w, r, err, http.StatusInternalServerError, "%s", err.Error())
+				s.renderer.RenderError(w, r, err, http.StatusInternalServerError, "%s", err.Error())
 				return
 			}
 		}
@@ -104,10 +104,10 @@ func (s *service) handleDelete() http.HandlerFunc {
 		err = s.database.Delete(ctx, chi.URLParam(r, "id"))
 		if err != nil {
 			if arango.IsNotFoundGeneral(err) {
-				trade.RenderError(w, r, err, http.StatusNotFound, "%s", err.Error())
+				s.renderer.RenderError(w, r, err, http.StatusNotFound, "%s", err.Error())
 				return
 			} else {
-				trade.RenderError(w, r, err, http.StatusInternalServerError, "%s", err.Error())
+				s.renderer.RenderError(w, r, err, http.StatusInternalServerError, "%s", err.Error())
 				return
 			}
 		}

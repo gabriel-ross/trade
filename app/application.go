@@ -6,6 +6,7 @@ import (
 
 	arango "github.com/arangodb/go-driver"
 	arangohttp "github.com/arangodb/go-driver/http"
+	"github.com/gabriel-ross/trade"
 	"github.com/gabriel-ross/trade/user"
 	"github.com/go-chi/chi"
 )
@@ -68,9 +69,9 @@ func New(cnf Config, options ...func(*application)) *application {
 	a.dbClient = dbClient
 
 	// Instantiate and register services
-	user.New(a.router, "/users", user.NewRepository(a.dbClient, "users"))
-	user.New(a.router, "/accounts", user.NewRepository(a.dbClient, "accounts"))
-	user.New(a.router, "/transactions", user.NewRepository(a.dbClient, "transactions"))
+	user.New(a.router, "/users", user.NewRepository(a.dbClient, "users"), &trade.RenderService{})
+	user.New(a.router, "/accounts", user.NewRepository(a.dbClient, "accounts"), &trade.RenderService{})
+	user.New(a.router, "/transactions", user.NewRepository(a.dbClient, "transactions"), &trade.RenderService{})
 
 	return a
 }
