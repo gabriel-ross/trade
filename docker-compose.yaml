@@ -1,0 +1,15 @@
+version: "3.9"
+services:
+  arangodb:
+    image: arangodb:latest
+    environment:
+      - ARANGO_NO_AUTH=1
+    ports:
+      - 8529:8529
+    volumes:
+      - arangodb:/var/lib/arangodb3
+      - arangodb_apps_data_container:/var/lib/arangodb3-apps
+
+volumes:
+  arangodb:
+  arangodb_apps_data_container:
