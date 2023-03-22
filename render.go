@@ -43,7 +43,6 @@ func (rs *RenderService) newErrorResponse(code int, err error, format string, ar
 func (rs *RenderService) mustWriteError(w http.ResponseWriter, err error) {
 	w.WriteHeader(http.StatusInternalServerError)
 	w.Write([]byte("error encountered while attempting to write error: " + err.Error()))
-	return
 }
 
 type errorResponse struct {
