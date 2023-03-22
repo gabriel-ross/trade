@@ -31,7 +31,6 @@ func (rs *RenderService) RenderError(w http.ResponseWriter, r *http.Request, svr
 	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(code)
 	w.Write(respBody)
-	return
 }
 
 func (rs *RenderService) newErrorResponse(code int, err error, format string, args ...any) *errorResponse {

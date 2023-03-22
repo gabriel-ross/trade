@@ -1,6 +1,6 @@
 module github.com/gabriel-ross/trade
 
-go 1.19
+go 1.20
 
 require (
 	github.com/arangodb/go-driver v1.5.2
