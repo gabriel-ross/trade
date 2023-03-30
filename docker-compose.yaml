@@ -1,5 +1,17 @@
 version: "3.9"
 services:
+  server:
+    build:
+      context: ./docker/server
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "8080:8080"
+    environment:
+      PORT: "8080"
+    depends_on:
+      - "arangodb"
+
   arangodb:
     image: arangodb:latest
     environment:
@@ -9,6 +21,15 @@ services:
     volumes:
       - arangodb:/var/lib/arangodb3
       - arangodb_apps_data_container:/var/lib/arangodb3-apps
+
+  proxy:
+    restart: always
+    ports:
+      - "8081:8081"
+    environment:
+      PORT: "8080"
+    depends_on:
+      - "server"
 
 volumes:
   arangodb:
