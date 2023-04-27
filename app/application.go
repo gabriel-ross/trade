@@ -6,7 +6,9 @@ import (
 
 	arangodriver "github.com/arangodb/go-driver"
 	"github.com/gabriel-ross/trade"
+	"github.com/gabriel-ross/trade/account"
 	"github.com/gabriel-ross/trade/arango"
+	"github.com/gabriel-ross/trade/transaction"
 	"github.com/gabriel-ross/trade/user"
 	"github.com/go-chi/chi"
 )
@@ -52,8 +54,8 @@ func New(cnf Config, options ...func(*application)) *application {
 
 	// Instantiate and register services
 	user.New(a.router, "/users", user.NewRepository(a.dbClient, "users"), &trade.RenderService{})
-	user.New(a.router, "/accounts", user.NewRepository(a.dbClient, "accounts"), &trade.RenderService{})
-	user.New(a.router, "/transactions", user.NewRepository(a.dbClient, "transactions"), &trade.RenderService{})
+	account.New(a.router, "/accounts", account.NewRepository(a.dbClient, "accounts"), &trade.RenderService{})
+	transaction.New(a.router, "/transactions", transaction.NewRepository(a.dbClient, "transactions"), &trade.RenderService{})
 
 	return a
 }

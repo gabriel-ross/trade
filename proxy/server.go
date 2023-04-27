@@ -32,7 +32,7 @@ type Server struct {
 	cache  *cache
 }
 
-func NewServer(cnf Config) *Server {
+func New(cnf Config) *Server {
 	return &Server{
 		cnf:    cnf,
 		cache:  NewCache(cnf.CACHE_TIMEOUT),
