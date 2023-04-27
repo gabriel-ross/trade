@@ -1,11 +1,10 @@
-package app
+package trade
 
 import (
 	"log"
 	"net/http"
 
 	arangodriver "github.com/arangodb/go-driver"
-	"github.com/gabriel-ross/trade"
 	"github.com/gabriel-ross/trade/arango"
 	"github.com/gabriel-ross/trade/user"
 	"github.com/go-chi/chi"
