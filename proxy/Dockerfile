@@ -3,14 +3,14 @@ FROM golang
 WORKDIR /app
 
 ENV PORT=81
-ENV SERVER_ADDRESS=localhost:80
+ENV SERVER_ADDRESS="localhost:80"
 
 COPY go.mod go.sum ./
 RUN go mod download
 
 COPY . .
 RUN mkdir -p bin
-RUN go build -o ./bin/proxy cmd/proxy
+RUN go build -o ./bin/proxy ./cmd/proxy.go
 
 EXPOSE ${PORT}
 

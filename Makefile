@@ -1,3 +1,12 @@
+up:
+	docker-compose up
+
+docker-build-cd:
+	docker built -t foo .
+
+docker-run-cd:
+	docker run -p 81:81 foo
+
 run:
 	go run cmd/trade/trade.go
 

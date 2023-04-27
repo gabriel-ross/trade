@@ -2,6 +2,7 @@ package proxy
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -103,4 +104,12 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func (s *Server) Run() error {
 	log.Printf("%s server running on port %s", s.cnf.NAME, s.cnf.PORT)
 	return http.ListenAndServe(":"+s.cnf.PORT, s)
+}
+
+func Ping() http.HandlerFunc {
+	resp := fmt.Sprintf("Ping received. Server is healthy")
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(resp))
+	}
 }

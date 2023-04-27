@@ -1,6 +1,7 @@
 package app
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 
@@ -52,6 +53,8 @@ func New(cnf Config, options ...func(*application)) *application {
 		log.Fatalf("error connecting to database: %v", err)
 	}
 
+	a.router.Get("/", a.Ping())
+
 	// Instantiate and register services
 	user.New(a.router, "/users", user.NewRepository(a.dbClient, "users"), &trade.RenderService{})
 	account.New(a.router, "/accounts", account.NewRepository(a.dbClient, "accounts"), &trade.RenderService{})
@@ -73,4 +76,12 @@ func WithCreateOnNotExist(flag bool) func(*application) {
 // Run runs the application on a.cnf.PORT
 func (a *application) Run() error {
 	return http.ListenAndServe(":"+a.cnf.PORT, a.router)
+}
+
+func (a *application) Ping() http.HandlerFunc {
+	resp := fmt.Sprintf("Ping received. Server is healthy and running at port %s", a.cnf.PORT)
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(resp))
+	}
 }
