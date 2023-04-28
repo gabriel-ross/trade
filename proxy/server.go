@@ -43,6 +43,12 @@ func New(cnf Config) *Server {
 
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var err error
+
+	if r.Method == http.MethodGet && r.RequestURI == "/ping" {
+		w.Write([]byte("Proxy is healthy"))
+		return
+	}
+
 	cachedResp, err := s.cache.Fetch(r)
 	if errors.Is(err, ErrNotFound) || errors.Is(err, ErrStaleCachedState) {
 		fwdReq, err := http.NewRequest(r.Method, s.cnf.SERVER_ADDRESS, r.Body)
