@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 
+	arango "github.com/arangodb/go-driver"
 	"github.com/gabriel-ross/trade"
 	"github.com/go-chi/chi"
 )
@@ -31,10 +32,10 @@ type service struct {
 }
 
 // New mounts the user routes on r at endpoint and returns a new user service.
-func New(r chi.Router, endpoint string, database Repository, renderer Renderer, options ...func(*service)) *service {
+func New(r chi.Router, endpoint string, db arango.Database, collectionName string, renderer Renderer, options ...func(*service)) *service {
 	svc := &service{
 		router:   r,
-		database: database,
+		database: NewRepository(db, collectionName),
 		renderer: renderer,
 	}
 	r.Mount(endpoint, svc.Routes())

@@ -1,4 +1,4 @@
-package app
+package trade
 
 import (
 	"fmt"
@@ -28,14 +28,16 @@ type application struct {
 	cnf      Config
 	router   chi.Router
 	dbClient arangodriver.Database
+	renderer RenderService
 }
 
 // New instantiates a new application according to cnf and options and returns
 // the new application.
 func New(cnf Config, options ...func(*application)) *application {
 	a := &application{
-		cnf:    cnf,
-		router: chi.NewRouter(),
+		cnf:      cnf,
+		router:   chi.NewRouter(),
+		renderer: RenderService{},
 	}
 
 	// Configure options
@@ -70,6 +72,12 @@ func New(cnf Config, options ...func(*application)) *application {
 func WithCreateOnNotExist(flag bool) func(*application) {
 	return func(a *application) {
 		a.cnf.createOnNotExist = flag
+	}
+}
+
+func (a *application) RegisterServices(endpoint string, collectionName string, newServices ...func(chi.Router, string, arangodriver.Database, string, trade.RenderService)) {
+	for _, newService := range newServices {
+		newService(a.router, endpoint, a.dbClient, collectionName, a.renderer)
 	}
 }
 

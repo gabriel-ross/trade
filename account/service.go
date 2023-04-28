@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 
+	arango "github.com/arangodb/go-driver"
 	"github.com/gabriel-ross/trade"
 	"github.com/go-chi/chi"
 )
@@ -31,25 +32,13 @@ type service struct {
 }
 
 // New mounts the account routes on r at endpoint and returns a new account service.
-func New(r chi.Router, endpoint string, database Repository, renderer Renderer, options ...func(*service)) *service {
+func New(r chi.Router, endpoint string, db arango.Database, collectionName string, renderer Renderer) *service {
 	svc := &service{
 		router:   r,
-		database: database,
+		database: NewRepository(db, collectionName),
 		renderer: renderer,
 	}
 	r.Mount(endpoint, svc.Routes())
 
-	for _, option := range options {
-		option(svc)
-	}
-
 	return svc
-}
-
-// WithRepository is a functional option for configuring a account service's
-// repository upon instantiation.
-func WithRepository(repo Repository) func(*service) {
-	return func(s *service) {
-		s.database = repo
-	}
 }
