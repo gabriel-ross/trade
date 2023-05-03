@@ -1,6 +1,7 @@
 package app
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
@@ -8,7 +9,6 @@ import (
 	arangodriver "github.com/arangodb/go-driver"
 	"github.com/gabriel-ross/trade"
 	"github.com/gabriel-ross/trade/account"
-	"github.com/gabriel-ross/trade/arango"
 	"github.com/gabriel-ross/trade/transaction"
 	"github.com/gabriel-ross/trade/user"
 	"github.com/go-chi/chi"
@@ -43,12 +43,12 @@ func New(cnf Config, options ...func(*application)) *application {
 		option(a)
 	}
 
-	arangoClient, err := arango.NewClient([]string{a.cnf.DB_ADDRESS})
+	arangoClient, err := trade.NewArangoClient([]string{a.cnf.DB_ADDRESS})
 	if err != nil {
 		log.Fatalf("error connecting to db: %v", err)
 	}
 
-	a.dbClient, err = arangoClient.Database(nil, a.cnf.DB_NAME, true, []string{"users", "accounts", "transactions"})
+	a.dbClient, err = arangoClient.Database(context.TODO(), a.cnf.DB_NAME, true, []string{"users", "accounts", "transactions"})
 	if err != nil {
 		log.Fatalf("error connecting to database: %v", err)
 	}
