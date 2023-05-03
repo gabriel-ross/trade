@@ -50,7 +50,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	cachedResp, err := s.cache.Fetch(r)
-	if errors.Is(err, ErrNotFound) || errors.Is(err, ErrStaleCachedState) {
+	if r.Header.Get("Cache-Control") == "no-cache" || errors.Is(err, ErrNotFound) || errors.Is(err, ErrStaleCachedState) {
 		fwdReq, err := http.NewRequest(r.Method, s.cnf.SERVER_ADDRESS, r.Body)
 		if err != nil {
 			log.Println(err)
@@ -98,6 +98,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		log.Println(err)
 		return
 	}
+
 	for name, values := range cachedResp.response.Header {
 		for _, value := range values {
 			w.Header().Add(name, value)
