@@ -1,0 +1,2 @@
+databaseEngine: arangodb
+interceptors: [path1, path2]
