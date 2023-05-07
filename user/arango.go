@@ -2,7 +2,6 @@ package user
 
 import (
 	"context"
-	"fmt"
 
 	arango "github.com/arangodb/go-driver"
 	"github.com/gabriel-ross/trade"
@@ -38,14 +37,11 @@ func (r *repository) Create(ctx context.Context, user trade.User) (trade.User, e
 }
 
 // List returns all documents in the collection.
-func (r *repository) List(ctx context.Context) ([]trade.User, error) {
+func (r *repository) List(ctx context.Context, query trade.ArangoQueryBuilder) ([]trade.User, error) {
 	var err error
 	results := []trade.User{}
 
-	query := fmt.Sprintf(
-		`FOR entry IN %s
-RETURN entry`, r.collectionName)
-	cur, err := r.database.Query(ctx, query, map[string]interface{}{})
+	cur, err := r.database.Query(ctx, query.String(), map[string]interface{}{})
 	if err != nil {
 		return []trade.User{}, err
 	}

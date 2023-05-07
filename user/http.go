@@ -53,6 +53,24 @@ func (s *service) handleList() http.HandlerFunc {
 		var err error
 		ctx := context.TODO()
 
+		queryVals, err := trade.NewQueryMap(r, map[string]bool{
+			"id":            false,
+			"name":          false,
+			"email":         false,
+			"phoneNumber":   false,
+			"sortBy":        false,
+			"sortDirection": false,
+			"limit":         false,
+		})
+
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte(err.Error()))
+			return
+		}
+
+		query := trade.NewArangoQueryBuilder("users").Filter(trade.FilterKey{})
+
 		resp, err := s.database.List(ctx)
 		if err != nil {
 			s.renderer.RenderError(w, r, err, http.StatusInternalServerError, "%s", err.Error())

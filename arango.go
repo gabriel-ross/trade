@@ -108,8 +108,8 @@ func (aqb *ArangoQueryBuilder) Limit(limit int) *ArangoQueryBuilder {
 	return aqb
 }
 
-func (aqb *ArangoQueryBuilder) Filter() *FilterQueryBuilder {
-	aqb.QueryString.WriteString("\n\tFILTER")
+func (aqb *ArangoQueryBuilder) Filter(filter FilterKey) *FilterQueryBuilder {
+	aqb.QueryString.WriteString(fmt.Sprintf("\n\tFILTER %s.%s %s %v", aqb.loopVar, filter.FieldName, filter.Operator, filter.Value))
 	return &FilterQueryBuilder{aqb}
 }
 
@@ -120,11 +120,6 @@ func (aqb *ArangoQueryBuilder) String() string {
 
 type FilterQueryBuilder struct {
 	*ArangoQueryBuilder
-}
-
-func (fqb *FilterQueryBuilder) On(filter FilterKey) *FilterQueryBuilder {
-	fqb.QueryString.WriteString(fmt.Sprintf(" %s.%s %s %v", fqb.loopVar, filter.FieldName, filter.Operator, filter.Value))
-	return fqb
 }
 
 func (fqb *FilterQueryBuilder) And(filter FilterKey) *FilterQueryBuilder {

@@ -2,7 +2,7 @@ up:
 	docker-compose up
 
 docker-build-cd:
-	docker built -t foo .
+	docker build -t foo .
 
 docker-run-cd:
 	docker run -p 81:81 foo
