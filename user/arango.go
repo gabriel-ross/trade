@@ -37,11 +37,11 @@ func (r *repository) Create(ctx context.Context, user trade.User) (trade.User, e
 }
 
 // List returns all documents in the collection.
-func (r *repository) List(ctx context.Context, query trade.ArangoQueryBuilder) ([]trade.User, error) {
+func (r *repository) List(ctx context.Context, query string) ([]trade.User, error) {
 	var err error
 	results := []trade.User{}
 
-	cur, err := r.database.Query(ctx, query.String(), map[string]interface{}{})
+	cur, err := r.database.Query(ctx, query, map[string]interface{}{})
 	if err != nil {
 		return []trade.User{}, err
 	}

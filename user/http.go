@@ -48,20 +48,19 @@ func (s *service) handleCreate() http.HandlerFunc {
 	}
 }
 
+// positive match is easy
+// url query operator can be in the form key=operator+value
+// do I need to map url query operators to arango filter operators?
+// or query using comma separated list
+// "inclusive" query parameter that makes the query build as an OR
+
 func (s *service) handleList() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var err error
 		ctx := context.TODO()
 
-		queryVals, err := trade.NewQueryMap(r, map[string]bool{
-			"id":            false,
-			"name":          false,
-			"email":         false,
-			"phoneNumber":   false,
-			"sortBy":        false,
-			"sortDirection": false,
-			"limit":         false,
-		})
+		urlQueryParams := []string{"id", "name", "email", "phoneNumber"}
+		query, err := trade.BuildFilterQueryFromURLParams(trade.NewArangoQueryBuilder("users"), r, urlQueryParams)
 
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
@@ -69,9 +68,7 @@ func (s *service) handleList() http.HandlerFunc {
 			return
 		}
 
-		query := trade.NewArangoQueryBuilder("users").Filter(trade.FilterKey{})
-
-		resp, err := s.database.List(ctx)
+		resp, err := s.database.List(ctx, query.String())
 		if err != nil {
 			s.renderer.RenderError(w, r, err, http.StatusInternalServerError, "%s", err.Error())
 			return
