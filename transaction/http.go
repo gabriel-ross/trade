@@ -14,9 +14,9 @@ import (
 
 // request represents a request body containing transaction data.
 type request struct {
-	Quantities  map[string]float64 `json:"quantities"`
-	SenderID    string             `json:"senderID"`
-	RecipientID string             `json:"recipientID"`
+	Quantities map[string]float64 `json:"quantities"`
+	Sender     string             `json:"sender"`
+	Recipient  string             `json:"recipient"`
 }
 
 type response[T trade.Transaction | []trade.Transaction] struct {
@@ -54,7 +54,16 @@ func (s *service) handleList() http.HandlerFunc {
 		var err error
 		ctx := context.TODO()
 
-		resp, err := s.database.List(ctx)
+		urlQueryParams := []string{"id", "sender", "recipient", "timestamp"}
+		query, err := trade.BuildFilterQueryFromURLParams(trade.NewArangoQueryBuilder("users"), r, urlQueryParams)
+
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte(err.Error()))
+			return
+		}
+
+		resp, err := s.database.List(ctx, query.String())
 		if err != nil {
 			s.renderer.RenderError(w, r, err, http.StatusInternalServerError, "%s", err.Error())
 			return
@@ -138,8 +147,8 @@ func bindRequest(r *http.Request, t *trade.Transaction) error {
 	err = json.Unmarshal(body, &reqBody)
 
 	t.Quantities = reqBody.Quantities
-	t.SenderID = reqBody.SenderID
-	t.RecipientID = reqBody.RecipientID
+	t.Sender = reqBody.Sender
+	t.Recipient = reqBody.Recipient
 	t.Timestamp = time.Now()
 
 	return nil
