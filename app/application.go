@@ -16,8 +16,8 @@ import (
 
 // Config contains all the settings for an application instance.
 type Config struct {
-	PORT             string `env:"PORT" default:"8080" required:"false"`
-	DB_ADDRESS       string `env:"DB_ADDRESS" default:"8080" required:"true"`
+	PORT             string `env:"PORT" default:"80" required:"false"`
+	DB_ADDRESS       string `env:"DB_ADDRESS" default:"8529" required:"true"`
 	DB_NAME          string `env:"DB_NAME" default:"demo" required:"false"`
 	createOnNotExist bool
 }
@@ -53,7 +53,7 @@ func New(cnf Config, options ...func(*application)) *application {
 		log.Fatalf("error connecting to database %v", err)
 	}
 
-	a.router.Get("/", a.Ping())
+	a.router.Get("/ping", a.Ping())
 
 	// Instantiate and register services
 	user.New(a.router, "/users", user.NewRepository(a.dbClient, "users"), &trade.RenderService{})
@@ -79,7 +79,7 @@ func (a *application) Run() error {
 }
 
 func (a *application) Ping() http.HandlerFunc {
-	resp := fmt.Sprintf("Ping received. Server is healthy and running at port %s", a.cnf.PORT)
+	resp := fmt.Sprintf("server is healthy and running at port %s", a.cnf.PORT)
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(resp))

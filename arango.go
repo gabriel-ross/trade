@@ -59,13 +59,13 @@ func (cl *Client) Database(ctx context.Context, name string, createOnNotExist bo
 
 // sort query will be formatted ?sort=key1+dir,key2+dir
 // Operator, value separated by + which decodes to a space. If there is no operator default to equality
-func BuildFilterQueryFromURLParams(aqb ArangoQueryBuilder, r *http.Request, queryParams []string) (FilterQueryBuilder, error) {
+func BuildFilterQueryFromURLParams(aqb ArangoQueryBuilder, r *http.Request, queryParams []string) (ArangoQueryBuilder, error) {
 	if len(queryParams) < 1 {
-		return FilterQueryBuilder{aqb}, nil
+		return aqb, nil
 	}
 
 	i := 0
-	var fqb FilterQueryBuilder
+	fqb := NewFilterQueryBuilder(aqb)
 	for idx, param := range queryParams {
 		if val := r.URL.Query().Get(param); val != "" {
 			fqb = aqb.Filter(FilterKeyFromURLElement(param, val))
@@ -74,12 +74,14 @@ func BuildFilterQueryFromURLParams(aqb ArangoQueryBuilder, r *http.Request, quer
 		}
 	}
 
-	for _, param := range queryParams[i:] {
-		if val := r.URL.Query().Get(param); val != "" {
-			if r.URL.Query().Get("inclusive") == "true" {
-				fqb = fqb.Or(FilterKeyFromURLElement(param, val))
-			} else {
-				fqb = fqb.And(FilterKeyFromURLElement(param, val))
+	if i+1 < len(queryParams) {
+		for _, param := range queryParams[i+1:] {
+			if val := r.URL.Query().Get(param); val != "" {
+				if r.URL.Query().Get("inclusive") == "true" {
+					fqb = fqb.Or(FilterKeyFromURLElement(param, val))
+				} else {
+					fqb = fqb.And(FilterKeyFromURLElement(param, val))
+				}
 			}
 		}
 	}
@@ -101,17 +103,18 @@ func BuildFilterQueryFromURLParams(aqb ArangoQueryBuilder, r *http.Request, quer
 			sortFields = append(sortFields, sf)
 		}
 	}
-	fqb = fqb.Sort(sortFields...)
+	aqb = fqb.Sort(sortFields...)
 
 	if limitStr := r.URL.Query().Get("limit"); limitStr != "" {
 		limit, err := strconv.Atoi(limitStr)
 		if err != nil {
-			return FilterQueryBuilder{}, err
+			return ArangoQueryBuilder{}, err
 		}
-		fqb = fqb.Limit(limit)
+		aqb = fqb.Limit(limit)
 	}
+
 	// extract sort and limit values. Move ExtractURLQueryParams code from request to here
-	return fqb, nil
+	return aqb.Done(), nil
 }
 
 type SortDirection string
@@ -197,12 +200,16 @@ func (aqb ArangoQueryBuilder) Limit(limit int) ArangoQueryBuilder {
 }
 
 func (aqb ArangoQueryBuilder) Filter(filter FilterKey) FilterQueryBuilder {
-	aqb.QueryString.WriteString(fmt.Sprintf("\n\tFILTER %s.%s %s %v", aqb.loopVar, filter.FieldName, filter.Operator, filter.Value))
+	aqb.QueryString.WriteString(fmt.Sprintf("\n\tFILTER %s.%s %s \"%v\"", aqb.loopVar, filter.FieldName, filter.Operator, filter.Value))
 	return FilterQueryBuilder{aqb}
 }
 
-func (aqb ArangoQueryBuilder) String() string {
+func (aqb ArangoQueryBuilder) Done() ArangoQueryBuilder {
 	aqb.QueryString.WriteString(fmt.Sprintf("\n\tRETURN %s", aqb.loopVar))
+	return aqb
+}
+
+func (aqb ArangoQueryBuilder) String() string {
 	return aqb.QueryString.String()
 }
 
@@ -210,25 +217,21 @@ type FilterQueryBuilder struct {
 	ArangoQueryBuilder
 }
 
+func NewFilterQueryBuilder(aqb ArangoQueryBuilder) FilterQueryBuilder {
+	return FilterQueryBuilder{aqb}
+}
+
 func (fqb FilterQueryBuilder) And(filter FilterKey) FilterQueryBuilder {
-	fqb.QueryString.WriteString(fmt.Sprintf(" && %s.%s %s %v", fqb.loopVar, filter.FieldName, filter.Operator, filter.Value))
+	fqb.QueryString.WriteString(fmt.Sprintf(" && %s.%s %s \"%v\"", fqb.loopVar, filter.FieldName, filter.Operator, filter.Value))
 	return fqb
 }
 
 func (fqb FilterQueryBuilder) Or(filter FilterKey) FilterQueryBuilder {
-	fqb.QueryString.WriteString(fmt.Sprintf(" || %s.%s %s %v", fqb.loopVar, filter.FieldName, filter.Operator, filter.Value))
+	fqb.QueryString.WriteString(fmt.Sprintf(" || %s.%s %s \"%v\"", fqb.loopVar, filter.FieldName, filter.Operator, filter.Value))
 	return fqb
 }
 
 func (fqb FilterQueryBuilder) Not(filter FilterKey) FilterQueryBuilder {
-	fqb.QueryString.WriteString(fmt.Sprintf(" NOT %s.%s %s %v", fqb.loopVar, filter.FieldName, filter.Operator, filter.Value))
+	fqb.QueryString.WriteString(fmt.Sprintf(" NOT %s.%s %s \"%v\"", fqb.loopVar, filter.FieldName, filter.Operator, filter.Value))
 	return fqb
-}
-
-func (fqb FilterQueryBuilder) Sort(sortFields ...SortField) FilterQueryBuilder {
-	return FilterQueryBuilder{fqb.ArangoQueryBuilder.Sort(sortFields...)}
-}
-
-func (fqb FilterQueryBuilder) Limit(limit int) FilterQueryBuilder {
-	return FilterQueryBuilder{fqb.ArangoQueryBuilder.Limit(limit)}
 }

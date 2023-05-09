@@ -1,40 +1,42 @@
 version: "3.9"
 services:
 
-  server:
-    build:
-      context: ./
-      dockerfile: Dockerfile
-    restart: always
-    ports:
-      - "${SERVER_PORT}:${SERVER_PORT}"
-    environment:
-      PORT: "${SERVER_PORT}"
-    depends_on:
-      - "arangodb"
+  # server:
+  #   build:
+  #     context: ./
+  #     dockerfile: Dockerfile
+  #   restart: always
+  #   ports:
+  #     - "${SERVER_PORT}:${SERVER_PORT}"
+  #   environment:
+  #     PORT: "${SERVER_PORT}"
+  #     ARANGODB_ADDRESS: arangodb
+  #     ARANGODB_PORT: ${ARANGODB_PORT}
+  #   depends_on:
+  #     - "arangodb"
 
   arangodb:
     image: arangodb:latest
     environment:
       - ARANGO_NO_AUTH=${ARANGO_NO_AUTH_CONFIG}
     ports:
-      - 8529:8529
+      - ${ARANGODB_PORT}:8529
     volumes:
       - arangodb:/var/lib/arangodb3
       - arangodb_apps_data_container:/var/lib/arangodb3-apps
 
-  proxy:
-    build:
-      context: ./proxy
-      dockerfile: Dockerfile
-    restart: always
-    ports:
-      - "${PROXY_PORT}:${PROXY_PORT}"
-    environment:
-      PORT: "${PROXY_PORT}"
-      SERVER_ADDRESS: "${SERVER_HOST}:${SERVER_PORT}"
-    depends_on:
-      - "server"
+  # proxy:
+  #   build:
+  #     context: ./proxy
+  #     dockerfile: Dockerfile
+  #   restart: always
+  #   ports:
+  #     - "${PROXY_PORT}:${PROXY_PORT}"
+  #   environment:
+  #     PORT: "${PROXY_PORT}"
+  #     SERVER_ADDRESS: "${SERVER_HOST}:${SERVER_PORT}"
+  #   depends_on:
+  #     - "server"
 
 volumes:
   arangodb:

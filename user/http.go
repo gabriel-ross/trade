@@ -3,8 +3,7 @@ package user
 import (
 	"context"
 	"encoding/json"
-	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 
 	arango "github.com/arangodb/go-driver"
@@ -62,7 +61,6 @@ func (s *service) handleList() http.HandlerFunc {
 
 		urlQueryParams := []string{"id", "name", "email", "phoneNumber"}
 		query, err := trade.BuildFilterQueryFromURLParams(trade.NewArangoQueryBuilder("users"), r, urlQueryParams)
-		fmt.Println("query: ", query.String())
 
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
@@ -145,7 +143,7 @@ func (s *service) handleDelete() http.HandlerFunc {
 // bindRequest is a helper function for binding data from a request to a user
 // object.
 func bindRequest(r *http.Request, u *trade.User) error {
-	body, err := ioutil.ReadAll(r.Body)
+	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		return err
 	}

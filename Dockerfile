@@ -9,7 +9,7 @@ RUN go mod download
 
 COPY . .
 RUN mkdir -p bin
-RUN go build -o ./bin/server cmd/trade.go
+RUN go build -o ./bin/server ./cmd/main.go
 
 EXPOSE ${PORT}
 
