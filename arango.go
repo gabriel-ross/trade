@@ -151,6 +151,15 @@ type FilterKey struct {
 	Value     interface{}
 }
 
+func (fk FilterKey) FormatValue() interface{} {
+	switch v := fk.Value.(type) {
+	case string:
+		return fmt.Sprintf("\"%s\"", v)
+	default:
+		return fk.Value
+	}
+}
+
 func FilterKeyFromURLElement(key, val string) FilterKey {
 	eles := strings.Split(val, " ")
 	if len(eles) < 2 {
@@ -200,7 +209,7 @@ func (aqb ArangoQueryBuilder) Limit(limit int) ArangoQueryBuilder {
 }
 
 func (aqb ArangoQueryBuilder) Filter(filter FilterKey) FilterQueryBuilder {
-	aqb.QueryString.WriteString(fmt.Sprintf("\n\tFILTER %s.%s %s \"%v\"", aqb.loopVar, filter.FieldName, filter.Operator, filter.Value))
+	aqb.QueryString.WriteString(fmt.Sprintf("\n\tFILTER %s.%s %s %v", aqb.loopVar, filter.FieldName, filter.Operator, filter.FormatValue()))
 	return FilterQueryBuilder{aqb}
 }
 
@@ -222,16 +231,16 @@ func NewFilterQueryBuilder(aqb ArangoQueryBuilder) FilterQueryBuilder {
 }
 
 func (fqb FilterQueryBuilder) And(filter FilterKey) FilterQueryBuilder {
-	fqb.QueryString.WriteString(fmt.Sprintf(" && %s.%s %s \"%v\"", fqb.loopVar, filter.FieldName, filter.Operator, filter.Value))
+	fqb.QueryString.WriteString(fmt.Sprintf(" && %s.%s %s %v", fqb.loopVar, filter.FieldName, filter.Operator, filter.FormatValue()))
 	return fqb
 }
 
 func (fqb FilterQueryBuilder) Or(filter FilterKey) FilterQueryBuilder {
-	fqb.QueryString.WriteString(fmt.Sprintf(" || %s.%s %s \"%v\"", fqb.loopVar, filter.FieldName, filter.Operator, filter.Value))
+	fqb.QueryString.WriteString(fmt.Sprintf(" || %s.%s %s %v", fqb.loopVar, filter.FieldName, filter.Operator, filter.FormatValue()))
 	return fqb
 }
 
 func (fqb FilterQueryBuilder) Not(filter FilterKey) FilterQueryBuilder {
-	fqb.QueryString.WriteString(fmt.Sprintf(" NOT %s.%s %s \"%v\"", fqb.loopVar, filter.FieldName, filter.Operator, filter.Value))
+	fqb.QueryString.WriteString(fmt.Sprintf(" NOT %s.%s %s %v", fqb.loopVar, filter.FieldName, filter.Operator, filter.FormatValue()))
 	return fqb
 }
