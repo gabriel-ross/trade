@@ -75,6 +75,7 @@ func WithCreateOnNotExist(flag bool) func(*application) {
 
 // Run runs the application on a.cnf.PORT
 func (a *application) Run() error {
+	fmt.Println("application running on port ", a.cnf.PORT)
 	return http.ListenAndServe(":"+a.cnf.PORT, a.router)
 }
 
