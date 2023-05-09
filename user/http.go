@@ -3,6 +3,7 @@ package user
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 
@@ -61,6 +62,7 @@ func (s *service) handleList() http.HandlerFunc {
 
 		urlQueryParams := []string{"id", "name", "email", "phoneNumber"}
 		query, err := trade.BuildFilterQueryFromURLParams(trade.NewArangoQueryBuilder("users"), r, urlQueryParams)
+		fmt.Println("query: ", query.String())
 
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)

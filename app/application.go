@@ -45,12 +45,12 @@ func New(cnf Config, options ...func(*application)) *application {
 
 	arangoClient, err := trade.NewArangoClient([]string{a.cnf.DB_ADDRESS})
 	if err != nil {
-		log.Fatalf("error connecting to db: %v", err)
+		log.Fatalf("error instantiating arangodb client %v", err)
 	}
 
 	a.dbClient, err = arangoClient.Database(context.TODO(), a.cnf.DB_NAME, true, []string{"users", "accounts", "transactions"})
 	if err != nil {
-		log.Fatalf("error connecting to database: %v", err)
+		log.Fatalf("error connecting to database %v", err)
 	}
 
 	a.router.Get("/", a.Ping())
