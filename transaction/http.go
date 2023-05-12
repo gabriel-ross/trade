@@ -39,12 +39,13 @@ func (s *service) handleCreate() http.HandlerFunc {
 			return
 		}
 
-		resp, err := s.database.Create(ctx, reqData)
+		id, resp, err := s.database.Create(ctx, reqData)
 		if err != nil {
 			s.renderer.RenderError(w, r, err, http.StatusInternalServerError, "%s", err.Error())
 			return
 		}
 
+		resp.ID = id
 		s.renderer.RenderJSON(w, r, http.StatusCreated, newResponse(resp))
 	}
 }
@@ -63,7 +64,7 @@ func (s *service) handleList() http.HandlerFunc {
 			return
 		}
 
-		resp, err := s.database.List(ctx, query.String())
+		resp, err := s.database.Query(ctx, query.String())
 		if err != nil {
 			s.renderer.RenderError(w, r, err, http.StatusInternalServerError, "%s", err.Error())
 			return

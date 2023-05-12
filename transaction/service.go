@@ -10,8 +10,8 @@ import (
 
 // Repository is the API for the Transaction datastore.
 type Repository interface {
-	Create(ctx context.Context, t trade.Transaction) (trade.Transaction, error)
-	List(ctx context.Context, query string) ([]trade.Transaction, error)
+	Create(ctx context.Context, t trade.Transaction) (string, trade.Transaction, error)
+	Query(ctx context.Context, query string) ([]trade.Transaction, error)
 	Get(ctx context.Context, id string) (trade.Transaction, error)
 	Update(ctx context.Context, id string, t trade.Transaction) (trade.Transaction, error)
 	Delete(ctx context.Context, id string) error

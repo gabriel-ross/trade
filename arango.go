@@ -45,51 +45,64 @@ func NewArangoClient(addrs []string) (*ArangoClient, error) {
 
 func (cl *ArangoClient) Database(ctx context.Context, name string, createOnNotExist bool, schemaPath string) (arangodriver.Database, error) {
 	var err error
-	dbClient, err := cl.DriverClient.Database(ctx, name)
+	var dbClient arangodriver.Database
+	dbClient, err = cl.DriverClient.Database(ctx, name)
 	if err != nil {
 		if arangodriver.IsNotFoundGeneral(err) && createOnNotExist {
 			// Create database with name
-			dbClient, err := cl.DriverClient.CreateDatabase(ctx, name, nil)
+			dbClient, err = cl.DriverClient.CreateDatabase(ctx, name, nil)
 			if err != nil {
 				return nil, err
-			}
-
-			schemaF, err := os.Open(schemaPath)
-			if err != nil {
-				return nil, err
-			}
-
-			schemaRaw, err := io.ReadAll(schemaF)
-			if err != nil {
-				return nil, err
-			}
-
-			var schema Schema
-			err = json.Unmarshal(schemaRaw, &schema)
-			if err != nil {
-				return nil, err
-			}
-
-			// Create document collections
-			for _, e := range schema.DocumentCollections {
-				_, err = dbClient.CreateCollection(ctx, gjson.Get(e, "collectionName").Str, nil)
-				if err != nil {
-					return nil, err
-				}
-			}
-
-			// Create edge collections
-			for _, e := range schema.EdgeCollections {
-				_, err = dbClient.CreateCollection(ctx, gjson.Get(e, "collectionName").Str, &arangodriver.CreateCollectionOptions{Type: arangodriver.CollectionTypeEdge})
-				if err != nil {
-					return nil, err
-				}
 			}
 
 		} else {
 			return nil, err
 		}
 	}
+
+	// Check if collections exist and create them if they don't
+	if createOnNotExist {
+		schemaF, err := os.Open(schemaPath)
+		if err != nil {
+			return nil, err
+		}
+
+		schemaRaw, err := io.ReadAll(schemaF)
+		if err != nil {
+			return nil, err
+		}
+
+		var schema Schema
+		err = json.Unmarshal(schemaRaw, &schema)
+		if err != nil {
+			return nil, err
+		}
+
+		// Create document collections
+		for _, e := range schema.DocumentCollections {
+			_, err = dbClient.Collection(ctx, gjson.Get(e, "collectionName").Str)
+			if err != nil && arangodriver.IsNotFoundGeneral(err) {
+				if _, err = dbClient.CreateCollection(ctx, gjson.Get(e, "collectionName").Str, nil); err != nil {
+					return nil, err
+				}
+			} else if err != nil {
+				return nil, err
+			}
+		}
+
+		// Create edge collections
+		for _, e := range schema.EdgeCollections {
+			_, err = dbClient.Collection(ctx, gjson.Get(e, "collectionName").Str)
+			if err != nil && arangodriver.IsNotFoundGeneral(err) {
+				if _, err = dbClient.CreateCollection(ctx, gjson.Get(e, "collectionName").Str, &arangodriver.CreateCollectionOptions{Type: arangodriver.CollectionTypeEdge}); err != nil {
+					return nil, err
+				}
+			} else if err != nil {
+				return nil, err
+			}
+		}
+	}
+
 	return dbClient, nil
 }
 

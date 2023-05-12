@@ -58,7 +58,7 @@ func New(cnf Config, options ...func(*application)) *application {
 	// Instantiate and register services
 	user.New(a.router, "/users", trade.NewArangoRepository[trade.User](a.dbClient, "users"), &trade.RenderService{})
 	account.New(a.router, "/accounts", trade.NewArangoRepository[trade.Account](a.dbClient, "accounts"), &trade.RenderService{})
-	transaction.New(a.router, "/transactions", transaction.NewRepository(a.dbClient, "transactions"), &trade.RenderService{})
+	transaction.New(a.router, "/transactions", trade.NewArangoRepository[trade.Transaction](a.dbClient, "transactions"), &trade.RenderService{})
 
 	return a
 }
