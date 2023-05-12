@@ -12,6 +12,7 @@ func (s *service) Routes() chi.Router {
 		r.Get("/", s.handleGet())
 		r.Put("/", s.handlePut())
 		r.Delete("/", s.handleDelete())
+		r.Get("/accounts", s.handleGetAccounts())
 	})
 
 	return r

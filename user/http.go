@@ -38,12 +38,13 @@ func (s *service) handleCreate() http.HandlerFunc {
 			return
 		}
 
-		resp, err := s.database.Create(ctx, reqData)
+		id, resp, err := s.database.Create(ctx, reqData)
 		if err != nil {
 			s.renderer.RenderError(w, r, err, http.StatusInternalServerError, "%s", err.Error())
 			return
 		}
 
+		resp.ID = id
 		s.renderer.RenderJSON(w, r, http.StatusCreated, newResponse(resp))
 	}
 }
@@ -60,7 +61,7 @@ func (s *service) handleList() http.HandlerFunc {
 		ctx := context.TODO()
 
 		urlQueryParams := []string{"id", "name", "email", "phoneNumber"}
-		query, err := trade.BuildFilterQueryFromURLParams(trade.NewArangoQueryBuilder("users"), r, urlQueryParams)
+		query, err := trade.BuildFilterQueryFromURLParams(trade.NewArangoQueryBuilder("users"), r, urlQueryParams, trade.NewPaginate(r))
 
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
@@ -68,7 +69,7 @@ func (s *service) handleList() http.HandlerFunc {
 			return
 		}
 
-		resp, err := s.database.List(ctx, query.String())
+		resp, err := s.database.Query(ctx, query.String())
 		if err != nil {
 			s.renderer.RenderError(w, r, err, http.StatusInternalServerError, "%s", err.Error())
 			return
@@ -137,6 +138,29 @@ func (s *service) handleDelete() http.HandlerFunc {
 		}
 
 		w.WriteHeader(http.StatusNoContent)
+	}
+}
+
+func (s *service) handleGetAccounts() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var err error
+		ctx := context.TODO()
+
+		query := trade.NewArangoQueryBuilder("accounts").Filter(trade.NewFilterKey("id", trade.Eq, chi.URLParam(r, "id"))).Paginate(trade.NewPaginate(r)).Done()
+
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte(err.Error()))
+			return
+		}
+
+		resp, err := s.database.Query(ctx, query.String())
+		if err != nil {
+			s.renderer.RenderError(w, r, err, http.StatusInternalServerError, "%s", err.Error())
+			return
+		}
+
+		s.renderer.RenderJSON(w, r, http.StatusOK, newResponse(resp))
 	}
 }
 

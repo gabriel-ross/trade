@@ -1,0 +1,16 @@
+{
+    "documentCollections": [
+        {
+            "collection_name": "users"
+        },
+        {
+            "collection_name": "accounts"
+        }
+    ],
+    "edge_collections": [
+        {
+            "collection_name": "transactions",
+            "related_collections": ["accounts", "accounts"]
+        }
+    ]
+}

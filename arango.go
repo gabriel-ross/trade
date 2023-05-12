@@ -2,38 +2,48 @@ package trade
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
-	"strconv"
+	"os"
 	"strings"
 
 	arangodriver "github.com/arangodb/go-driver"
 	arangohttp "github.com/arangodb/go-driver/http"
+	"github.com/tidwall/gjson"
 )
 
-type Client struct {
+type Schema struct {
+	DocumentCollections []string `json:"documentCollections"`
+	EdgeCollections     []string `json:"edgeCollections"`
+}
+
+type ArangoClient struct {
 	DriverConnection arangodriver.Connection
 	DriverClient     arangodriver.Client
 }
 
-func NewArangoClient(addrs []string) (*Client, error) {
+func NewArangoClient(addrs []string) (*ArangoClient, error) {
 	conn, err := arangohttp.NewConnection(arangohttp.ConnectionConfig{
 		Endpoints: addrs,
 	})
 	if err != nil {
-		return &Client{}, err
+		return nil, err
 	}
 
 	cl, err := arangodriver.NewClient(arangodriver.ClientConfig{
 		Connection: conn,
 	})
 	if err != nil {
-		return &Client{}, err
+		return nil, err
 	}
-	return &Client{DriverClient: cl}, nil
+	return &ArangoClient{
+		DriverClient: cl,
+	}, nil
 }
 
-func (cl *Client) Database(ctx context.Context, name string, createOnNotExist bool, collections []string) (arangodriver.Database, error) {
+func (cl *ArangoClient) Database(ctx context.Context, name string, createOnNotExist bool, schemaPath string) (arangodriver.Database, error) {
 	var err error
 	dbClient, err := cl.DriverClient.Database(ctx, name)
 	if err != nil {
@@ -43,13 +53,39 @@ func (cl *Client) Database(ctx context.Context, name string, createOnNotExist bo
 			if err != nil {
 				return nil, err
 			}
-			// Create collections
-			for _, colName := range collections {
-				_, err = dbClient.CreateCollection(ctx, colName, nil)
+
+			schemaF, err := os.Open(schemaPath)
+			if err != nil {
+				return nil, err
+			}
+
+			schemaRaw, err := io.ReadAll(schemaF)
+			if err != nil {
+				return nil, err
+			}
+
+			var schema Schema
+			err = json.Unmarshal(schemaRaw, &schema)
+			if err != nil {
+				return nil, err
+			}
+
+			// Create document collections
+			for _, e := range schema.DocumentCollections {
+				_, err = dbClient.CreateCollection(ctx, gjson.Get(e, "collectionName").Str, nil)
 				if err != nil {
 					return nil, err
 				}
 			}
+
+			// Create edge collections
+			for _, e := range schema.EdgeCollections {
+				_, err = dbClient.CreateCollection(ctx, gjson.Get(e, "collectionName").Str, &arangodriver.CreateCollectionOptions{Type: arangodriver.CollectionTypeEdge})
+				if err != nil {
+					return nil, err
+				}
+			}
+
 		} else {
 			return nil, err
 		}
@@ -57,9 +93,111 @@ func (cl *Client) Database(ctx context.Context, name string, createOnNotExist bo
 	return dbClient, nil
 }
 
+type ArangoRepository[T any] struct {
+	database       arangodriver.Database
+	collectionName string
+}
+
+func NewArangoRepository[T any](db arangodriver.Database, collectionName string) *ArangoRepository[T] {
+	return &ArangoRepository[T]{
+		database:       db,
+		collectionName: collectionName,
+	}
+}
+
+func (r *ArangoRepository[T]) Create(ctx context.Context, data T) (string, T, error) {
+	var err error
+	var t T
+	col, err := r.database.Collection(ctx, r.collectionName)
+	if err != nil {
+		return "", t, err
+	}
+
+	meta, err := col.CreateDocument(ctx, data)
+	if err != nil {
+		return "", t, err
+	}
+
+	return meta.Key, data, nil
+}
+
+func (r *ArangoRepository[T]) Query(ctx context.Context, query string) ([]T, error) {
+	var err error
+	results := []T{}
+
+	cur, err := r.database.Query(ctx, query, map[string]interface{}{})
+	if err != nil {
+		return nil, err
+	}
+	defer cur.Close()
+
+	for cur.HasMore() {
+		var data T
+		if _, err = cur.ReadDocument(ctx, &data); err != nil {
+			return nil, err
+		}
+		results = append(results, data)
+	}
+	return results, nil
+}
+
+func (r *ArangoRepository[T]) Get(ctx context.Context, id string) (T, error) {
+	var err error
+	var t T
+
+	col, err := r.database.Collection(ctx, r.collectionName)
+	if err != nil {
+		return t, err
+	}
+
+	var result T
+	_, err = col.ReadDocument(ctx, id, &result)
+	if err != nil {
+		return t, err
+	}
+
+	return result, nil
+}
+
+// Update updates the document identified by id with values user and returns
+// the new document. If no document with id is found returns NotFoundError.
+func (r *ArangoRepository[T]) Update(ctx context.Context, id string, data T) (T, error) {
+	var err error
+	var t T
+	col, err := r.database.Collection(ctx, r.collectionName)
+	if err != nil {
+		return t, err
+	}
+
+	var result T
+	_, err = col.UpdateDocument(arangodriver.WithReturnNew(ctx, &result), id, data)
+	if err != nil {
+		return t, err
+	}
+
+	return result, nil
+}
+
+// Delete deletes the document with given id from the collection. If no match
+// is found returns NotFoundError.
+func (r *ArangoRepository[T]) Delete(ctx context.Context, id string) error {
+	var err error
+	col, err := r.database.Collection(ctx, r.collectionName)
+	if err != nil {
+		return err
+	}
+
+	_, err = col.RemoveDocument(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // sort query will be formatted ?sort=key1+dir,key2+dir
 // Operator, value separated by + which decodes to a space. If there is no operator default to equality
-func BuildFilterQueryFromURLParams(aqb ArangoQueryBuilder, r *http.Request, queryParams []string) (ArangoQueryBuilder, error) {
+func BuildFilterQueryFromURLParams(aqb ArangoQueryBuilder, r *http.Request, queryParams []string, paginate Paginate) (ArangoQueryBuilder, error) {
 	if len(queryParams) < 1 {
 		return aqb, nil
 	}
@@ -86,35 +224,11 @@ func BuildFilterQueryFromURLParams(aqb ArangoQueryBuilder, r *http.Request, quer
 		}
 	}
 
-	sortFields := []SortField{}
-	if sort := r.URL.Query().Get("sort"); sort != "" {
-		keys := strings.Split(sort, ",")
-		for _, key := range keys {
-			vals := strings.Split(key, " ")
-			sf := SortField{}
-			if len(vals) > 0 {
-				sf.Field = vals[0]
-			}
-			if len(vals) > 1 && strings.ToLower(vals[1]) == "desc" {
-				sf.Direction = SORT_DESC
-			} else {
-				sf.Direction = SORT_ASC
-			}
-			sortFields = append(sortFields, sf)
-		}
-	}
-	aqb = fqb.Sort(sortFields...)
-
-	if limitStr := r.URL.Query().Get("limit"); limitStr != "" {
-		limit, err := strconv.Atoi(limitStr)
-		if err != nil {
-			return ArangoQueryBuilder{}, err
-		}
-		aqb = fqb.Limit(limit)
-	}
+	aqb = fqb.Sort(paginate.SortFields...)
+	aqb = aqb.Limit(paginate.Limit)
 
 	// extract sort and limit values. Move ExtractURLQueryParams code from request to here
-	return aqb.Done(), nil
+	return fqb.Sort(paginate.SortFields...).Limit(paginate.Limit).Done(), nil
 }
 
 type SortDirection string
@@ -140,15 +254,18 @@ var (
 	}
 )
 
-type SortField struct {
-	Field     string
-	Direction SortDirection
-}
-
 type FilterKey struct {
 	FieldName string
 	Operator  FilterOperator
 	Value     interface{}
+}
+
+func NewFilterKey(fieldName string, op FilterOperator, val interface{}) FilterKey {
+	return FilterKey{
+		FieldName: fieldName,
+		Operator:  op,
+		Value:     val,
+	}
 }
 
 func (fk FilterKey) FormatValue() interface{} {
@@ -206,6 +323,10 @@ func (aqb ArangoQueryBuilder) Sort(sortFields ...SortField) ArangoQueryBuilder {
 func (aqb ArangoQueryBuilder) Limit(limit int) ArangoQueryBuilder {
 	aqb.QueryString.WriteString(fmt.Sprintf("\n\tLIMIT %d", limit))
 	return aqb
+}
+
+func (aqb ArangoQueryBuilder) Paginate(p Paginate) ArangoQueryBuilder {
+	return aqb.Sort(p.SortFields...).Limit(p.Limit)
 }
 
 func (aqb ArangoQueryBuilder) Filter(filter FilterKey) FilterQueryBuilder {

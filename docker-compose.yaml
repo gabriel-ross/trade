@@ -1,6 +1,5 @@
 version: "3.9"
 services:
-
   # server:
   #   build:
   #     context: ./
@@ -15,16 +14,6 @@ services:
   #   depends_on:
   #     - "arangodb"
 
-  arangodb:
-    image: arangodb:latest
-    environment:
-      - ARANGO_NO_AUTH=${ARANGO_NO_AUTH_CONFIG}
-    ports:
-      - ${ARANGODB_PORT}:8529
-    volumes:
-      - arangodb:/var/lib/arangodb3
-      - arangodb_apps_data_container:/var/lib/arangodb3-apps
-
   # proxy:
   #   build:
   #     context: ./proxy
@@ -37,6 +26,50 @@ services:
   #     SERVER_ADDRESS: "${SERVER_HOST}:${SERVER_PORT}"
   #   depends_on:
   #     - "server"
+
+  # kafka:
+  #   image: confluentinc/cp-kafka:7.0.1
+  #   container_name: kafka
+  #   ports:
+  #     - "${KAFKA_PORT}:9092"
+  #   depends_on:
+  #     - zookeeper
+  #   environment:
+  #     KAFKA_BROKER_ID: 1
+  #     KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+  #     KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_INTERNAL:PLAINTEXT
+  #     KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,PLAINTEXT_INTERNAL://kafka:29092
+  #     KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+  #     KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+  #     KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+
+  # zookeeper:
+  #   image: confluentinc/cp-zookeeper:7.0.1
+  #   container_name: zookeeper
+  #   environment:
+  #     ZOOKEEPER_CLIENT_PORT: 2181
+  #     ZOOKEEPER_TICK_TIME: 2000 
+
+  # kafdrop:
+  #   image: obsidiandynamics/kafdrop
+  #   restart: "no"
+  #   ports:
+  #     - "${KAFDROP_PORT}:9000"
+  #   environment:
+  #     KAFKA_BROKERCONNECT: "kafka:29092"
+  #     JVM_OPTS: "-Xms16M -Xmx48M -Xss180K -XX:-TieredCompilation -XX:+UseStringDeduplication -noverify"
+  #   depends_on:
+  #     - "kafka"
+
+  arangodb:
+    image: arangodb:latest
+    environment:
+      - ARANGO_NO_AUTH=${ARANGO_NO_AUTH_CONFIG}
+    ports:
+      - ${ARANGODB_PORT}:8529
+    volumes:
+      - arangodb:/var/lib/arangodb3
+      - arangodb_apps_data_container:/var/lib/arangodb3-apps
 
 volumes:
   arangodb:

@@ -8,10 +8,13 @@ import (
 	"github.com/go-chi/chi"
 )
 
+// TODO: see if arango repository struct fulfulls this interface
+// TODO: pass collectionName to NewArangoRepository contructor
+
 // Repository is the API for the User datastore.
 type Repository interface {
-	Create(ctx context.Context, u trade.User) (trade.User, error)
-	List(ctx context.Context, query string) ([]trade.User, error)
+	Create(ctx context.Context, u trade.User) (string, trade.User, error)
+	Query(ctx context.Context, query string) ([]trade.User, error)
 	Get(ctx context.Context, id string) (trade.User, error)
 	Update(ctx context.Context, id string, u trade.User) (trade.User, error)
 	Delete(ctx context.Context, id string) error

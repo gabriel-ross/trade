@@ -48,7 +48,7 @@ func New(cnf Config, options ...func(*application)) *application {
 		log.Fatalf("error instantiating arangodb client %v", err)
 	}
 
-	a.dbClient, err = arangoClient.Database(context.TODO(), a.cnf.DB_NAME, true, []string{"users", "accounts", "transactions"})
+	a.dbClient, err = arangoClient.Database(context.TODO(), a.cnf.DB_NAME, true, "./db/arango_schema.json")
 	if err != nil {
 		log.Fatalf("error connecting to database %v", err)
 	}
@@ -56,8 +56,8 @@ func New(cnf Config, options ...func(*application)) *application {
 	a.router.Get("/ping", a.Ping())
 
 	// Instantiate and register services
-	user.New(a.router, "/users", user.NewRepository(a.dbClient, "users"), &trade.RenderService{})
-	account.New(a.router, "/accounts", account.NewRepository(a.dbClient, "accounts"), &trade.RenderService{})
+	user.New(a.router, "/users", trade.NewArangoRepository[trade.User](a.dbClient, "users"), &trade.RenderService{})
+	account.New(a.router, "/accounts", trade.NewArangoRepository[trade.Account](a.dbClient, "accounts"), &trade.RenderService{})
 	transaction.New(a.router, "/transactions", transaction.NewRepository(a.dbClient, "transactions"), &trade.RenderService{})
 
 	return a

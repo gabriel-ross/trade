@@ -10,8 +10,8 @@ import (
 
 // Repository is the API for the Account datastore.
 type Repository interface {
-	Create(ctx context.Context, a trade.Account) (trade.Account, error)
-	List(ctx context.Context, query string) ([]trade.Account, error)
+	Create(ctx context.Context, a trade.Account) (string, trade.Account, error)
+	Query(ctx context.Context, query string) ([]trade.Account, error)
 	Get(ctx context.Context, id string) (trade.Account, error)
 	Update(ctx context.Context, id string, a trade.Account) (trade.Account, error)
 	Delete(ctx context.Context, id string) error

@@ -54,8 +54,8 @@ func (s *service) handleList() http.HandlerFunc {
 		var err error
 		ctx := context.TODO()
 
-		urlQueryParams := []string{"id", "sender", "recipient", "timestamp"}
-		query, err := trade.BuildFilterQueryFromURLParams(trade.NewArangoQueryBuilder("users"), r, urlQueryParams)
+		urlQueryParams := []string{"id", "_from", "_to", "timestamp"}
+		query, err := trade.BuildFilterQueryFromURLParams(trade.NewArangoQueryBuilder("users"), r, urlQueryParams, trade.NewPaginate(r))
 
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
