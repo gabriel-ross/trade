@@ -1,0 +1,39 @@
+{
+    "users": [
+        {
+            "name": "gabe silly",
+            "email": "foo.bar@baz.com",
+            "phoneNumber": "111-111-1111"
+        },{
+            "name": "sarah example",
+            "email": "fakeEmail@gmail.com",
+            "phoneNumber": "999-999-8889"
+        }, {
+            "name": "ellie dog",
+            "email": "dog@animals.com",
+            "phoneNumber": "123-456-7890"
+        }
+    ],
+    "accounts": [
+        {
+            "owner": "",
+            "balances": {},
+            "reputation": 100
+        },{
+            "owner": "",
+            "balances": {},
+            "reputation": 50
+        },{
+            "owner": "",
+            "balances": {},
+            "reputation": 10
+        }
+    ],
+    "transactions": [
+        {
+            "sender": "",
+            "recipient": "",
+            "quantities": {}
+        }
+    ]
+}
